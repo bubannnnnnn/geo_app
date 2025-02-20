@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Auth</title>
+    <link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+    <h1>Auth</h1>
+
+    <div id="register-form">
+        <h2>Register</h2>
+        <form id="register">
+            <label for="register-username">Username:</label><br>
+            <input type="text" id="register-username" name="username" required><br>
+
+            <label for="register-password">Password:</label><br>
+            <input type="password" id="register-password" name="password" required><br><br>
+
+            <label for="register-email">Email:</label><br>
+            <input type="email" id="register-email" name="email" required><br><br>
+
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    <div id="login-form">
+        <h2>Login</h2>
+        <form id="login">
+            <label for="login-username">Username:</label><br>
+            <input type="text" id="login-username" name="username" required><br>
+
+            <label for="login-password">Password:</label><br>
+            <input type="password" id="login-password" name="password" required><br><br>
+
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <script>
+        // Registration form
+        const registerForm = document.querySelector('#register');
+        registerForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const username = document.querySelector('#register-username').value;
+            const password = document.querySelector('#register-password').value;
+            const email = document.querySelector('#register-email').value;
+
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                      email: email
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/web/index.html'; // Redirect to main page after successful registration
+                } else {
+                    console.error('Registration failed:', response.status);
+                    alert('Registration failed. Please try again.');
+                }
+            })
+            .catch(error => console.error('Error registering:', error));
+        });
+
+        // Login form
+        const loginForm = document.querySelector('#login');
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const username = document.querySelector('#login-username').value;
+            const password = document.querySelector('#login-password').value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/web/index.html'; // Redirect to main page after successful login
+                } else {
+                    console.error('Login failed:', response.status);
+                    alert('Login failed. Please try again.');
+                }
+            })
+            .catch(error => console.error('Error logging in:', error));
+        });
+    </script>
+</body>
+</html>

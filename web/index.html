@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Geo App - Wells</title>
+    <link rel="stylesheet" href="/web/style.css">
+    <style>
+        /* Стили для модального окна */
+        .modal {
+            display: none; /* Скрыто по умолчанию */
+            position: fixed; /* Фиксированное положение */
+            z-index: 1; /* Разместить поверх всего */
+            left: 0;
+            top: 0;
+            width: 100%; /* Полная ширина */
+            height: 100%; /* Полная высота */
+            overflow: auto; /* Включить прокрутку, если контент больше, чем окно */
+            background-color: rgba(0,0,0,0.4); /* Черный с прозрачностью */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% сверху и посередине */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Может быть изменена в зависимости от содержимого */
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer; /* Добавлено для визуального указания */
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wells</h1>
+
+    <!-- Форма для добавления скважины -->
+    <h2>Add New Well</h2>
+    <form id="add-well-form">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="latitude">Latitude:</label><br>
+        <input type="number" id="latitude" name="latitude" required step="any"><br>
+
+        <label for="longitude">Longitude:</label><br>
+        <input type="number" id="longitude" name="longitude" required step="any"><br>
+
+        <label for="description">Description:</label><br>
+        <input type="text" id="description" name="description"><br><br>
+
+        <button type="submit">Add Well</button>
+    </form>
+
+    <table id="wells-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Здесь будут отображены данные о скважинах -->
+        </tbody>
+    </table>
+
+    <!-- Модальное окно для редактирования скважины -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Well</h2>
+            <form id="editWellForm">
+                <input type="hidden" id="wellId">
+
+                <label for="editName">Name:</label><br>
+                <input type="text" id="editName" name="editName"><br><br>
+
+                <label for="editLatitude">Latitude:</label><br>
+                <input type="number" id="editLatitude" name="editLatitude" step="any"><br><br>
+
+                <label for="editLongitude">Longitude:</label><br>
+                <input type="number" id="editLongitude" name="editLongitude" step="any"><br><br>
+
+                <label for="editDescription">Description:</label><br>
+                <textarea id="editDescription" name="editDescription"></textarea><br><br>
+
+                <button type="submit">Save</button>
+                <button type="button" id="cancelEdit">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Get the modal
+        var modal = document.getElementById("editModal");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+          // Get the cancel button
+        var cancelButton = document.getElementById("cancelEdit");
+
+        const wellsTable = document.querySelector('#wells-table tbody');
+        const addWellForm = document.querySelector('#add-well-form');
+
+        // Function to fetch wells data from the API
+        function fetchWells() {
+            fetch('/api/wells')
+                .then(response => response.json())
+                .then(data => {
+                    wellsTable.innerHTML = '';
+                    data.forEach(well => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${well.ID}</td>
+                            <td>${well.name}</td>
+                            <td>${well.latitude}</td>
+                            <td>${well.longitude}</td>
+                            <td>${well.description}</td>
+                            <td>
+                                <button class="edit-well" data-id="${well.ID}">Edit</button>
+                                <button class="delete-well" data-id="${well.ID}">Delete</button>
+                            </td>
+                        `;
+                        wellsTable.appendChild(row);
+                    });
+                    attachEventListeners();
+                })
+                .catch(error => console.error('Error fetching wells:', error));
+        }
+
+        // Function to attach event listeners to edit and delete buttons
+        function attachEventListeners() {
+            const editButtons = document.querySelectorAll('.edit-well');
+            editButtons.forEach(button => {
+                button.addEventListener('click', openEditModal);
+            });
+
+            const deleteButtons = document.querySelectorAll('.delete-well');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', deleteWell);
+            });
+        }
+
+        // Function to add a new well
+        addWellForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.querySelector('#name').value;
+            const latitude = parseFloat(document.querySelector('#latitude').value);
+            const longitude = parseFloat(document.querySelector('#longitude').value);
+            const description = document.querySelector('#description').value;
+
+            fetch('/api/wells', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    latitude: latitude,
+                    longitude: longitude,
+                    description: description
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    fetchWells();
+
+                    document.querySelector('#name').value = '';
+                    document.querySelector('#latitude').value = '';
+                    document.querySelector('#longitude').value = '';
+                    document.querySelector('#description').value = '';
+                } else {
+                    console.error('Failed to add well:', response.status);
+                    response.json().then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error adding well:', error));
+        });
+           // Function to open the edit modal
+           function openEditModal(event) {
+            const wellID = event.target.closest('button').dataset.id;
+
+            // Fetch the well data
+            fetch(`/api/wells/${wellID}`)
+                .then(response => response.json())
+                .then(well => {
+                    // Populate the form fields
+                    document.getElementById("wellId").value = well.ID;
+                    document.getElementById("editName").value = well.name;
+                    document.getElementById("editLatitude").value = well.latitude;
+                    document.getElementById("editLongitude").value = well.longitude;
+                    document.getElementById("editDescription").value = well.description;
+
+                    // Display the modal
+                    modal.style.display = "block";
+                })
+                .catch(error => {
+                    console.error("Error fetching well:", error);
+                });
+        }
+
+           // Function to close the modal
+        function closeModal() {
+            modal.style.display = "none";
+        }
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            closeModal();
+        }
+
+            // When the user clicks on cancel button, close the modal
+        cancelButton.onclick = function() {
+            closeModal();
+        }
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                 closeModal();
+            }
+        }
+               // Get the form element
+               const editWellForm = document.getElementById("editWellForm");
+
+// Add an event listener to the form
+editWellForm.addEventListener("submit", function(event) {
+    event.preventDefault(); // Prevent the default form submission
+
+    // Get the well ID from the hidden input field
+    const wellID = document.getElementById("wellId").value;
+
+    // Get the updated values from the form fields
+    const name = document.getElementById("editName").value;
+    const latitude = parseFloat(document.getElementById("editLatitude").value);
+    const longitude = parseFloat(document.getElementById("editLongitude").value);
+    const description = document.getElementById("editDescription").value;
+
+    // Create the request body
+    const requestBody = JSON.stringify({
+        name: name,
+        latitude: latitude,
+        longitude: longitude,
+        description: description
+    });
+
+    // Send the PUT request to update the well
+    fetch(`/api/wells/${wellID}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: requestBody
+    })
+        .then(response => {
+            if (response.ok) {
+                // If the update was successful, close the modal and refresh the well data
+                closeModal();
+                fetchWells();
+            } else {
+                // If the update failed, log the error to the console
+                console.error("Failed to update well:", response.status);
+            }
+        })
+        .catch(error => {
+            // If there was an error sending the request, log it to the console
+            console.error("Error updating well:", error);
+        });
+});
+
+        // Function to delete a well
+        function deleteWell(event) {
+            const wellID = event.target.closest('button').dataset.id;
+
+            fetch(`/api/wells/${wellID}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    fetchWells();
+                } else {
+                    console.error('Failed to delete well:', response.status);
+                }
+            })
+            .catch(error => console.error('Error deleting well:', error));
+        }
+
+        // Initial fetch of wells
+        fetchWells();
+    </script>
+</body>
+</html>

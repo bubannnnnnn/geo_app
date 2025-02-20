@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Samples</title>
+    <link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+    <h1>Samples</h1>
+
+    <!-- Create Sample Form -->
+    <h2>Create Sample</h2>
+    <form id="create-sample-form">
+        <label for="wellID">Well ID:</label><br>
+        <input type="number" id="wellID" name="wellID" required><br>
+
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="description">Description:</label><br>
+        <input type="text" id="description" name="description"><br>
+
+        <label for="value">Value:</label><br>
+        <input type="number" id="value" name="value" step="any"><br><br>
+
+        <button type="submit">Create Sample</button>
+    </form>
+
+    <!-- Display Samples for a Well ID -->
+    <h2>Samples for Well ID</h2>
+    <form id="get-samples-form">
+        <label for="get_well_id">Well ID:</label><br>
+        <input type="number" id="get_well_id" name="get_well_id" required><br><br>
+        <button type="submit">Get Samples</button>
+    </form>
+
+    <table id="samples-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Well ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Samples will be displayed here -->
+        </tbody>
+    </table>
+
+    <script>
+        const createSampleForm = document.querySelector('#create-sample-form');
+        const getSamplesForm = document.querySelector('#get-samples-form');
+        const samplesTableBody = document.querySelector('#samples-table tbody');
+
+        // Function to handle form submission and create a sample
+        createSampleForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const wellID = parseInt(document.querySelector('#wellID').value, 10);
+            const name = document.querySelector('#name').value;
+            const description = document.querySelector('#description').value;
+            const value = parseFloat(document.querySelector('#value').value); // Convert to float
+
+            fetch('/api/samples', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    wellID: wellID,
+                    name: name,
+                    description: description,
+                    value: value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Sample created:', data);
+                // Optionally, clear the form
+                createSampleForm.reset();
+            })
+            .catch(error => console.error('Error creating sample:', error));
+        });
+
+        // Function to fetch samples by Well ID
+        getSamplesForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const wellID = document.querySelector('#get_well_id').value;
+            const wellIDNumber = parseInt(wellID, 10);
+
+            if (isNaN(wellIDNumber)) {
+                console.error('Invalid Well ID: Not a Number');
+                alert('Please enter a valid Well ID (number).');
+                return;
+            }
+
+            fetch(`/api/samples/well/${wellIDNumber}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(samples => {
+                console.log('Samples:', samples); // Добавлен console.log
+                // Clear the table body
+                samplesTableBody.innerHTML = '';
+
+                // Populate the table with the fetched samples
+                if (Array.isArray(samples)) {
+                  samples.forEach(sample => {
+                      const row = document.createElement('tr');
+                      row.innerHTML = `
+                          <td>${sample.ID}</td>
+                          <td>${sample.WellID}</td>
+                          <td>${sample.Name}</td>
+                          <td>${sample.Description}</td>
+                          <td>${sample.Value}</td>
+                      `;
+                      samplesTableBody.appendChild(row);
+                  });
+                } else {
+                  console.error("Samples is not an array:", samples);
+                  alert("No samples found or an error occurred.");
+                }
+            })
+            .catch(error => console.error('Error fetching samples:', error));
+        });
+    </script>
+</body>
+</html>
