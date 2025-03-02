@@ -29,6 +29,7 @@ func NewWellHandler(wellService services.WellService) WellHandler {
 	validate := validator.New()
 	validate.RegisterValidation("latitude", latitudeValidation)
 	validate.RegisterValidation("longitude", longitudeValidation)
+	validate.RegisterValidation("positive", positiveValidation)
 	return &wellHandler{wellService: wellService, validator: validate}
 }
 
@@ -40,6 +41,11 @@ func latitudeValidation(fl validator.FieldLevel) bool {
 func longitudeValidation(fl validator.FieldLevel) bool {
 	longitude := fl.Field().Float()
 	return longitude >= -180 && longitude <= 180
+}
+
+func positiveValidation(fl validator.FieldLevel) bool {
+	value := fl.Field().Float()
+	return value >= 0
 }
 
 func (h *wellHandler) GetWells(c *gin.Context) {

@@ -4,26 +4,173 @@
     <meta charset="UTF-8">
     <title>Geo App - Wells</title>
     <link rel="stylesheet" href="/web/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
+        /* Общие стили */
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Стили для таблицы */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #ecf0f1;
+            transition: background-color 0.3s;
+        }
+
+        /* Стили для кнопок */
+        button,
+        .edit-well,
+        .delete-well,
+        #add-well-form button[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        button:hover,
+        .edit-well:hover,
+        .delete-well:hover,
+        #add-well-form button[type="submit"]:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .delete-well {
+            background-color: #e74c3c;
+        }
+
+        .delete-well:hover {
+            background-color: #c0392b;
+        }
+
+        /* Стили для форм */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        input[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        /* Стили для формы добавления скважины */
+        #add-well-form {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #add-well-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* Стили для карты */
+        #map {
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
         /* Стили для модального окна */
         .modal {
-            display: none; /* Скрыто по умолчанию */
-            position: fixed; /* Фиксированное положение */
-            z-index: 1; /* Разместить поверх всего */
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; /* Полная ширина */
-            height: 100%; /* Полная высота */
-            overflow: auto; /* Включить прокрутку, если контент больше, чем окно */
-            background-color: rgba(0,0,0,0.4); /* Черный с прозрачностью */
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
         }
 
         .modal-content {
             background-color: #fefefe;
-            margin: 15% auto; /* 15% сверху и посередине */
+            margin: 5% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 80%; /* Может быть изменена в зависимости от содержимого */
+            width: 80%;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         }
 
         .close {
@@ -31,7 +178,8 @@
             float: right;
             font-size: 28px;
             font-weight: bold;
-            cursor: pointer; /* Добавлено для визуального указания */
+            cursor: pointer;
+            transition: color 0.3s;
         }
 
         .close:hover,
@@ -57,7 +205,22 @@
         <input type="number" id="longitude" name="longitude" required step="any"><br>
 
         <label for="description">Description:</label><br>
-        <input type="text" id="description" name="description"><br><br>
+        <input type="text" id="description" name="description"><br>
+
+        <label for="resourceType">Resource Type:</label><br>
+        <input type="text" id="resourceType" name="resourceType"><br>
+
+        <label for="depth">Depth (meters):</label><br>
+        <input type="number" id="depth" name="depth" step="any"><br>
+
+        <label for="volume">Volume (tons):</label><br>
+        <input type="number" id="volume" name="volume" step="any"><br>
+
+        <label for="groundType">Ground Type:</label><br>
+        <input type="text" id="groundType" name="groundType"><br>
+
+        <label for="cadastralNumber">Cadastral Number:</label><br>
+        <input type="text" id="cadastralNumber" name="cadastralNumber"><br>
 
         <button type="submit">Add Well</button>
     </form>
@@ -70,6 +233,11 @@
                 <th>Latitude</th>
                 <th>Longitude</th>
                 <th>Description</th>
+                <th>ResourceType</th>
+                <th>Depth</th>
+                <th>Volume</th>
+                <th>GroundType</th>
+                <th>Cadastral Number</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -77,6 +245,9 @@
             <!-- Здесь будут отображены данные о скважинах -->
         </tbody>
     </table>
+
+    <!-- Карта -->
+    <div id="map"></div>
 
     <!-- Модальное окно для редактирования скважины -->
     <div id="editModal" class="modal">
@@ -98,23 +269,51 @@
                 <label for="editDescription">Description:</label><br>
                 <textarea id="editDescription" name="editDescription"></textarea><br><br>
 
+                <label for="editResourceType">Resource Type:</label><br>
+                <input type="text" id="editResourceType" name="editResourceType"><br><br>
+
+                <label for="editDepth">Name:</label><br>
+                <input type="number" id="editDepth" name="editDepth" step="any"><br><br>
+
+                <label for="editVolume">Latitude:</label><br>
+                <input type="number" id="editVolume" name="editVolume" step="any"><br><br>
+
+                <label for="editGroundType">Longitude:</label><br>
+                <input type="text" id="editGroundType" name="editGroundType"><br><br>
+
+                <label for="editCadastralNumber">Description:</label><br>
+                <input type="text" id="editCadastralNumber" name="editCadastralNumber"><br><br>
+
                 <button type="submit">Save</button>
                 <button type="button" id="cancelEdit">Cancel</button>
             </form>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
         // Get the modal
         var modal = document.getElementById("editModal");
-
-        // Get the <span> element that closes the modal
         var span = document.getElementsByClassName("close")[0];
-          // Get the cancel button
         var cancelButton = document.getElementById("cancelEdit");
-
         const wellsTable = document.querySelector('#wells-table tbody');
         const addWellForm = document.querySelector('#add-well-form');
+        var map = L.map('map').setView([51.505, -0.09], 6); // Set initial view
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Function to add a marker to the map
+        function addWellMarker(well) {
+            var marker = L.marker([well.latitude, well.longitude]).addTo(map);
+            marker.bindPopup(`
+                <b>${well.name}</b><br>
+                Cadastral Number: ${well.cadastralNumber || 'N/A'}<br>
+                Depth: ${well.depth ? well.depth + ' meters' : 'N/A'}<br>
+                Volume: ${well.volume ? well.volume + ' tons' : 'N/A'}<br>
+            `);
+        }
 
         // Function to fetch wells data from the API
         function fetchWells() {
@@ -122,6 +321,11 @@
                 .then(response => response.json())
                 .then(data => {
                     wellsTable.innerHTML = '';
+                    map.eachLayer(function (layer) {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
                     data.forEach(well => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
@@ -129,13 +333,19 @@
                             <td>${well.name}</td>
                             <td>${well.latitude}</td>
                             <td>${well.longitude}</td>
-                            <td>${well.description}</td>
+                            <td>${well.description || ''}</td>
+                            <td>${well.resourceType || ''}</td>
+                            <td>${well.depth ? well.depth + ' meters' : ''}</td>
+                            <td>${well.volume ? well.volume + ' tons' : ''}</td>
+                            <td>${well.groundType || ''}</td>
+                            <td>${well.cadastralNumber || ''}</td>
                             <td>
                                 <button class="edit-well" data-id="${well.ID}">Edit</button>
                                 <button class="delete-well" data-id="${well.ID}">Delete</button>
                             </td>
                         `;
                         wellsTable.appendChild(row);
+                        addWellMarker(well);
                     });
                     attachEventListeners();
                 })
@@ -163,6 +373,11 @@
             const latitude = parseFloat(document.querySelector('#latitude').value);
             const longitude = parseFloat(document.querySelector('#longitude').value);
             const description = document.querySelector('#description').value;
+            const resourceType = document.querySelector('#resourceType').value;
+            const depth = parseFloat(document.querySelector('#depth').value);
+            const volume = parseFloat(document.querySelector('#volume').value);
+            const groundType = document.querySelector('#groundType').value;
+            const cadastralNumber = document.querySelector('#cadastralNumber').value;
 
             fetch('/api/wells', {
                 method: 'POST',
@@ -173,7 +388,12 @@
                     name: name,
                     latitude: latitude,
                     longitude: longitude,
-                    description: description
+                    description: description,
+                    resourceType: resourceType,
+                    depth: depth,
+                    volume: volume,
+                    groundType: groundType,
+                    cadastralNumber: cadastralNumber,
                 })
             })
             .then(response => {
@@ -184,6 +404,12 @@
                     document.querySelector('#latitude').value = '';
                     document.querySelector('#longitude').value = '';
                     document.querySelector('#description').value = '';
+                    document.querySelector('#resourceType').value = '';
+                    document.querySelector('#depth').value = '';
+                    document.querySelector('#volume').value = '';
+                    document.querySelector('#groundType').value = '';
+                    document.querySelector('#cadastralNumber').value = '';
+
                 } else {
                     console.error('Failed to add well:', response.status);
                     response.json().then(data => {
@@ -195,22 +421,24 @@
             })
             .catch(error => console.error('Error adding well:', error));
         });
-           // Function to open the edit modal
-           function openEditModal(event) {
+
+        // Function to open the edit modal
+        function openEditModal(event) {
             const wellID = event.target.closest('button').dataset.id;
 
-            // Fetch the well data
             fetch(`/api/wells/${wellID}`)
                 .then(response => response.json())
                 .then(well => {
-                    // Populate the form fields
                     document.getElementById("wellId").value = well.ID;
                     document.getElementById("editName").value = well.name;
                     document.getElementById("editLatitude").value = well.latitude;
                     document.getElementById("editLongitude").value = well.longitude;
                     document.getElementById("editDescription").value = well.description;
-
-                    // Display the modal
+                    document.getElementById("editResourceType").value = well.resourceType;
+                    document.getElementById("editDepth").value = well.depth;
+                    document.getElementById("editVolume").value = well.volume;
+                    document.getElementById("editGroundType").value = well.groundType;
+                    document.getElementById("editCadastralNumber").value = well.cadastralNumber;
                     modal.style.display = "block";
                 })
                 .catch(error => {
@@ -218,72 +446,72 @@
                 });
         }
 
-           // Function to close the modal
+        // Function to close the modal
         function closeModal() {
             modal.style.display = "none";
         }
-        // When the user clicks on <span> (x), close the modal
+
         span.onclick = function() {
             closeModal();
         }
 
-            // When the user clicks on cancel button, close the modal
         cancelButton.onclick = function() {
             closeModal();
         }
-        // When the user clicks anywhere outside of the modal, close it
+
         window.onclick = function(event) {
             if (event.target == modal) {
-                 closeModal();
+                closeModal();
             }
         }
-               // Get the form element
-               const editWellForm = document.getElementById("editWellForm");
 
-// Add an event listener to the form
-editWellForm.addEventListener("submit", function(event) {
-    event.preventDefault(); // Prevent the default form submission
+        // Function to handle edit form submission
+        const editWellForm = document.getElementById("editWellForm");
+        editWellForm.addEventListener("submit", function(event) {
+            event.preventDefault();
 
-    // Get the well ID from the hidden input field
-    const wellID = document.getElementById("wellId").value;
+            const wellID = document.getElementById("wellId").value;
+            const name = document.getElementById("editName").value;
+            const latitude = parseFloat(document.getElementById("editLatitude").value);
+            const longitude = parseFloat(document.getElementById("editLongitude").value);
+            const description = document.getElementById("editDescription").value;
+            const resourceType = document.getElementById("editResourceType").value;
+            const depth = parseFloat(document.getElementById("editDepth").value);
+            const volume = parseFloat(document.getElementById("editVolume").value);
+            const groundType = document.getElementById("editGroundType").value;
+            const cadastralNumber = document.getElementById("editCadastralNumber").value;
 
-    // Get the updated values from the form fields
-    const name = document.getElementById("editName").value;
-    const latitude = parseFloat(document.getElementById("editLatitude").value);
-    const longitude = parseFloat(document.getElementById("editLongitude").value);
-    const description = document.getElementById("editDescription").value;
+            const requestBody = JSON.stringify({
+                name: name,
+                latitude: latitude,
+                longitude: longitude,
+                description: description,
+                resourceType: resourceType,
+                depth: depth,
+                volume: volume,
+                groundType: groundType,
+                cadastralNumber: cadastralNumber,
+            });
 
-    // Create the request body
-    const requestBody = JSON.stringify({
-        name: name,
-        latitude: latitude,
-        longitude: longitude,
-        description: description
-    });
-
-    // Send the PUT request to update the well
-    fetch(`/api/wells/${wellID}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: requestBody
-    })
-        .then(response => {
-            if (response.ok) {
-                // If the update was successful, close the modal and refresh the well data
-                closeModal();
-                fetchWells();
-            } else {
-                // If the update failed, log the error to the console
-                console.error("Failed to update well:", response.status);
-            }
-        })
-        .catch(error => {
-            // If there was an error sending the request, log it to the console
-            console.error("Error updating well:", error);
+            fetch(`/api/wells/${wellID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: requestBody
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal();
+                    fetchWells();
+                } else {
+                    console.error("Failed to update well:", response.status);
+                }
+            })
+            .catch(error => {
+                console.error("Error updating well:", error);
+            });
         });
-});
 
         // Function to delete a well
         function deleteWell(event) {

@@ -1,4 +1,3 @@
-// internal/repositories/well_repository.go
 package repositories
 
 import (
@@ -8,11 +7,11 @@ import (
 )
 
 type WellRepository interface {
-	GetWells() ([]models.Well, error)
-	GetWellByID(id uint) (models.Well, error)
-	CreateWell(well models.Well) (models.Well, error)
-	UpdateWell(well models.Well) (models.Well, error)
-	DeleteWell(id uint) error
+	Create(well *models.Well) error
+	GetByID(id uint) (*models.Well, error)
+	GetAll() ([]models.Well, error)
+	Update(well *models.Well) error
+	Delete(id uint) error
 }
 
 type wellRepository struct {
@@ -23,29 +22,30 @@ func NewWellRepository(db *gorm.DB) WellRepository {
 	return &wellRepository{db: db}
 }
 
-func (r *wellRepository) GetWells() ([]models.Well, error) {
-	var wells []models.Well
-	result := r.db.Find(&wells)
-	return wells, result.Error
+func (r *wellRepository) Create(well *models.Well) error {
+	return r.db.Create(well).Error
 }
 
-func (r *wellRepository) GetWellByID(id uint) (models.Well, error) {
+func (r *wellRepository) GetByID(id uint) (*models.Well, error) {
 	var well models.Well
-	result := r.db.First(&well, id)
-	return well, result.Error
+	if err := r.db.First(&well, id).Error; err != nil {
+		return nil, err
+	}
+	return &well, nil
 }
 
-func (r *wellRepository) CreateWell(well models.Well) (models.Well, error) {
-	result := r.db.Create(&well)
-	return well, result.Error
+func (r *wellRepository) GetAll() ([]models.Well, error) {
+	var wells []models.Well
+	if err := r.db.Find(&wells).Error; err != nil {
+		return nil, err
+	}
+	return wells, nil
 }
 
-func (r *wellRepository) UpdateWell(well models.Well) (models.Well, error) {
-	result := r.db.Model(&well).Updates(well)
-	return well, result.Error
+func (r *wellRepository) Update(well *models.Well) error {
+	return r.db.Save(well).Error
 }
 
-func (r *wellRepository) DeleteWell(id uint) error {
-	result := r.db.Delete(&models.Well{}, id)
-	return result.Error
+func (r *wellRepository) Delete(id uint) error {
+	return r.db.Delete(&models.Well{}, id).Error
 }

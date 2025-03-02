@@ -4,11 +4,13 @@ body {
     margin: 20px;
     background-color: #f4f4f4;
     color: #333;
+    line-height: 1.6; /* Добавлено для улучшения читаемости текста */
 }
 
 h1 {
     color: #3498db;
     text-align: center;
+    margin-bottom: 30px; /* Увеличено расстояние до формы/таблицы */
 }
 
 /* Стили для таблицы */
@@ -18,6 +20,8 @@ table {
     margin-top: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: white;
+    border-radius: 5px; /* Добавлено скругление углов */
+    overflow: hidden; /* Чтобы тени и скругления работали корректно */
 }
 
 th, td {
@@ -30,6 +34,7 @@ th {
     background-color: #3498db;
     color: white;
     font-weight: bold;
+    text-transform: uppercase; /* Добавлено для лучшего вида заголовков */
 }
 
 tbody tr:nth-child(even) {
@@ -38,33 +43,64 @@ tbody tr:nth-child(even) {
 
 tbody tr:hover {
     background-color: #ecf0f1;
+    transition: background-color 0.3s; /* Плавное изменение цвета при наведении */
 }
 
-/* Стили для кнопок (если будут) */
-button {
-    background-color: #2ecc71;
+/* Стили для кнопок */
+button,
+.edit-well,
+.delete-well,
+#add-well-form button[type="submit"] {
+    background-color: #3498db;
     color: white;
-    padding: 10px 15px;
+    padding: 10px 15px; /* Увеличено пространство вокруг текста */
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.3s; /* Добавлен transform */
+    display: inline-block; /* Чтобы кнопки занимали только необходимую ширину */
+    margin-bottom: 5px; /* Небольшой отступ снизу */
 }
 
-button:hover {
-    background-color: #27ae60;
+button:hover,
+.edit-well:hover,
+.delete-well:hover,
+#add-well-form button[type="submit"]:hover {
+    background-color: #2980b9;
+    transform: scale(1.05); /* Небольшое увеличение при наведении */
 }
 
-/* Стили для форм (если будут) */
+.delete-well {
+    background-color: #e74c3c;
+}
+
+.delete-well:hover {
+    background-color: #c0392b;
+}
+
+/* Стили для форм */
 input[type="text"],
+input[type="number"], /* Добавлено для числовых полей */
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+textarea {
     width: 100%;
-    padding: 10px;
-    margin: 5px 0;
+    padding: 12px; /* Увеличено поле ввода */
+    margin: 8px 0; /* Увеличен отступ */
     border: 1px solid #ddd;
     border-radius: 4px;
     box-sizing: border-box;
+    font-size: 16px; /* Увеличен размер текста */
+    transition: border-color 0.3s; /* Плавное изменение цвета рамки */
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+    border-color: #3498db; /* Рамка при фокусе */
+    outline: none; /* Убирает стандартную обводку фокуса */
 }
 
 input[type="submit"] {
@@ -80,72 +116,66 @@ input[type="submit"]:hover {
     background-color: #2980b9;
 }
 
-/* ... существующие стили ... */
-
-#add-well-form label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-#add-well-form input[type="text"],
-#add-well-form input[type="number"] { /* Добавили input[type="number"] */
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-/* Стили для формы */
+/* Стили для формы добавления скважины */
 #add-well-form {
-    margin-bottom: 20px;
-    padding: 15px;
+    margin-bottom: 30px; /* Увеличено расстояние */
+    padding: 20px; /* Увеличено внутреннее пространство */
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень для формы */
 }
 
 #add-well-form label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px; /* Увеличен отступ снизу */
     font-weight: bold;
+    color: #555; /* Изменен цвет текста */
 }
 
-#add-well-form input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
+/* Стили для карты (если есть) */
+#map {
+    height: 500px; /* Высота карты */
     border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
 }
 
-/* Стили для кнопок */
-.edit-well,
-.delete-well,
-#add-well-form button[type="submit"] {
-    background-color: #3498db;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
+/* Стили для модального окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* Уменьшено верхнее расстояние */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    border-radius: 5px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); /* Усилена тень */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
     cursor: pointer;
-    margin-right: 5px;
-    transition: background-color 0.3s;
+    transition: color 0.3s; /* Плавное изменение цвета */
 }
 
-.edit-well:hover,
-.delete-well:hover,
-#add-well-form button[type="submit"]:hover {
-    background-color: #2980b9;
-}
-
-.delete-well {
-    background-color: #e74c3c;
-}
-
-.delete-well:hover {
-    background-color: #c0392b;
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
 }

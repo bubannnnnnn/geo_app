@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Geo App - Material Information</title>
+    <link rel="stylesheet" href="/web/style.css">
+    <style>
+        /* Общие стили */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        /* Стили для контейнера информации о материале */
+        #materialDetails {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #materialDetails h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        #materialDetails p {
+            margin-bottom: 10px;
+        }
+
+        /* ===== Стили для кастомного выпадающего списка ===== */
+        .select-container {
+            position: relative;
+            width: 300px; /* Ширина контейнера */
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+            user-select: none; /* Предотвращает выделение текста */
+        }
+
+        .select-container .selected-value {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .select-container .options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-top: none;
+            display: none;
+            z-index: 10; /* Убедитесь, что список отображается поверх других элементов */
+        }
+
+        .select-container.active .options {
+            display: block; /* Показывать при активации */
+        }
+
+        .select-container .options .option {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-container .options .option:last-child {
+            border-bottom: none;
+        }
+
+        .select-container .options .option:hover {
+            background-color: #f9f9f9;
+        }
+
+        .select-container .options .option .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .select-container .options .option .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        /* Стили для формы */
+        #materialForm label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #materialForm input[type="text"],
+        #materialForm input[type="number"],
+        #materialForm textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #materialForm button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Стили для кнопок удаления */
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        /* Стили для flex контейнера */
+        .option-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Размещаем элементы по краям */
+        }
+
+        .option-container option {
+            flex-grow: 1; /* Занимает доступное пространство */
+        }
+    </style>
+</head>
+<body>
+    <h1>Material Information</h1>
+
+    <h2>Create/Edit Material</h2>
+    <form id="materialForm">
+        <input type="hidden" id="materialId" name="materialId">
+
+        <label for="materialName">Material Name:</label><br>
+        <input type="text" id="materialName" name="materialName" required><br>
+
+        <label for="materialDescription">Material Description:</label><br>
+        <textarea id="materialDescription" name="materialDescription"></textarea><br>
+
+        <label for="physicalProperties">Physical Properties:</label><br>
+        <textarea id="physicalProperties" name="physicalProperties"></textarea><br>
+
+        <label for="chemicalProperties">Chemical Properties:</label><br>
+        <textarea id="chemicalProperties" name="chemicalProperties"></textarea><br>
+
+        <label for="wellId">Well ID (optional):</label><br>
+        <input type="number" id="wellId" name="wellId"><br>
+
+        <button type="submit" id="saveMaterial">Save Material</button>
+        <button type="button" id="cancelMaterial">Cancel</button>
+    </form>
+
+    <button type="button" id="newMaterial">New Material</button>
+
+    <h2>Select Material</h2>
+    <label>Select Material:</label>
+    <div class="select-container">
+        <div class="selected-value">-- Select Material --</div>
+        <div class="options">
+            <!-- Здесь будут добавляться опции -->
+        </div>
+    </div>
+
+    <div id="materialDetails" style="display: none;">
+        <h2>Material Details:</h2>
+        <p><strong>Name:</strong> <span id="materialNameDetails"></span></p>
+        <p><strong>Description:</strong> <span id="materialDescriptionDetails"></span></p>
+        <p><strong>Physical Properties:</strong> <span id="physicalPropertiesDetails"></span></p>
+        <p><strong>Chemical Properties:</strong> <span id="chemicalPropertiesDetails"></span></p>
+
+        <h2>Well Details:</h2>
+        <p><strong>Name:</strong> <span id="wellName"></span></p>
+        <p><strong>Latitude:</strong> <span id="wellLatitude"></span></p>
+        <p><strong>Longitude:</strong> <span id="wellLongitude"></span></p>
+        <p><strong>Description:</strong> <span id="wellDescription"></span></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded event fired"); // Проверка события DOMContentLoaded
+
+            const materialDetailsDiv = document.getElementById('materialDetails');
+            const materialForm = document.getElementById('materialForm');
+            const materialIdInput = document.getElementById('materialId');
+            const newMaterialButton = document.getElementById('newMaterial');
+            const cancelMaterialButton = document.getElementById('cancelMaterial');
+            const materialNameInput = document.getElementById('materialName');
+            const materialDescriptionInput = document.getElementById('materialDescription');
+            const physicalPropertiesInput = document.getElementById('physicalProperties');
+            const chemicalPropertiesInput = document.getElementById('chemicalProperties');
+            const wellIdInput = document.getElementById('wellId');
+
+            // Получаем элементы кастомного выпадающего списка
+            const selectContainer = document.querySelector('.select-container');
+            const selectedValue = document.querySelector('.select-container .selected-value');
+            const optionsContainer = document.querySelector('.select-container .options');
+
+            if (!optionsContainer) {
+                console.error("optionsContainer is null! Check your HTML.");
+            } else {
+                console.log("optionsContainer found:", optionsContainer);
+            }
+
+            // Функция для очистки формы
+            function clearMaterialForm() {
+                materialIdInput.value = '';
+                materialNameInput.value = '';
+                materialDescriptionInput.value = '';
+                physicalPropertiesInput.value = '';
+                chemicalPropertiesInput.value = '';
+                wellIdInput.value = '';
+            }
+
+            // Обработчик кнопки "New Material"
+            if (newMaterialButton) {
+                newMaterialButton.addEventListener('click', clearMaterialForm);
+            }
+
+            // Обработчик кнопки "Cancel"
+            if (cancelMaterialButton) {
+                cancelMaterialButton.addEventListener('click', clearMaterialForm);
+            }
+
+            // Обработчик отправки формы
+            if (materialForm) {
+                materialForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const materialName = materialNameInput.value;
+                    const materialDescription = materialDescriptionInput.value;
+                    const physicalProperties = physicalPropertiesInput.value;
+                    const chemicalProperties = chemicalPropertiesInput.value;
+                    let wellId = wellIdInput.value; // Получаем значение wellId
+
+                    // Преобразуем wellId в null, если оно пустое
+                    let wellIdToSend = null;
+                    if (wellId !== "") {
+                        wellIdToSend = parseInt(wellId);
+                    }
+
+                    const materialId = materialIdInput.value;
+
+                    const materialData = {
+                        material_name: materialName,
+                        material_description: materialDescription,
+                        physical_properties: physicalProperties,
+                        chemical_properties: chemicalProperties,
+                        well_id: wellIdToSend // Отправляем null, если wellId пустой
+                    };
+
+                    const method = materialId ? 'PUT' : 'POST';
+                    const url = materialId ? `/api/materials/${materialId}` : '/api/materials';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(materialData)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert(`Material ${materialId ? 'updated' : 'added'} successfully!`);
+                            clearMaterialForm();
+                            populateMaterialSelect(); // Обновляем список
+                        } else {
+                            console.error(`Failed to ${materialId ? 'update' : 'add'} material:`, response.status);
+                            response.json().then(data => {
+                                alert(data.error || `Failed to ${materialId ? 'update' : 'add'} material.`);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error ${materialId ? 'updating' : 'adding'} material:`, error);
+                        alert(`Error ${materialId ? 'updating' : 'adding'} material.`);
+                    });
+                });
+            }
+
+            // Функция для удаления материала
+            function deleteMaterial(materialId) {
+                console.log("deleteMaterial called with id:", materialId); //  Проверяем, вызывается ли функция
+                if (confirm('Are you sure you want to delete this material?')) {
+                    fetch(`/api/materials/${materialId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Material deleted successfully!');
+                            populateMaterialSelect(); // Обновляем список
+                        } else {
+                            console.error('Failed to delete material:', response.status);
+                            alert('Failed to delete material.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting material:', error);
+                        alert('Failed to delete material.');
+                    });
+                }
+            }
+
+            // Функция для заполнения кастомного выпадающего списка
+            function populateMaterialSelect() {
+                console.log("populateMaterialSelect called");
+                fetch('/api/materials')
+                    .then(response => response.json())
+                    .then(materials => {
+                        console.log("Materials received:", materials); //  Добавили console.log
+                        if (!Array.isArray(materials)) {
+                            console.error("Materials is not an array:", materials);
+                            return; // Прерываем выполнение, если materials не является массивом
+                        }
+
+                        optionsContainer.innerHTML = ''; // Очищаем список
+
+                        materials.forEach(material => {
+                            console.log("Processing material:", material.material_name, "with ID:", material.id); //  Добавили console.log
+                            const option = document.createElement('div');
+                            option.classList.add('option');
+                            option.textContent = material.material_name;
+                            option.dataset.id = material.id;
+
+                            const deleteButton = document.createElement('button');
+                            deleteButton.textContent = 'Delete';
+                            deleteButton.classList.add('delete-button');
+
+                            //  Создаём замыкание, чтобы сохранить правильный material.id
+                            (function(materialId) {
+                                deleteButton.addEventListener('click', function(event) {
+                                    event.stopPropagation(); // Предотвращаем закрытие списка
+                                    console.log("Deleting material with ID (from button):", materialId);
+                                    deleteMaterial(materialId);
+                                });
+                            })(material.id);  //  Вызываем анонимную функцию с текущим material.id
+
+                            option.appendChild(deleteButton);
+                            optionsContainer.appendChild(option);
+                            console.log("Option appended to optionsContainer:", option);
+
+                            // Обработчик клика на опцию
+                            option.addEventListener('click', function() {
+                                const materialId = this.dataset.id;
+                                getMaterialInfo(materialId);
+                                selectedValue.textContent = material.material_name; // Обновляем отображаемое значение
+                                selectContainer.classList.remove('active'); // Закрываем список
+                            });
+                        });
+                    })
+                    .catch(error => console.error('Error loading materials:', error));
+            }
+
+            // Функция для получения информации о материале
+            function getMaterialInfo(materialId) {
+                fetch(`/api/materials/${materialId}`)
+                    .then(response => response.json())
+                    .then(material => {
+                        // Заполняем информацию о материале
+                        document.getElementById('materialNameDetails').textContent = material.material_name;
+                        document.getElementById('materialDescriptionDetails').textContent = material.physical_properties;
+                        document.getElementById('chemicalPropertiesDetails').textContent = material.chemical_properties;
+
+                        // Заполняем информацию о скважине
+                        document.getElementById('wellName').textContent = material.well ? material.well.name : 'N/A';
+                        document.getElementById('wellLatitude').textContent = material.well ? material.well.latitude : 'N/A';
+                        document.getElementById('wellLongitude').textContent = material.well ? material.well.longitude : 'N/A';
+                        document.getElementById('wellDescription').textContent = material.well ? material.well.description : 'N/A';
+
+                        // Показываем div с информацией
+                        materialDetailsDiv.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error loading material info:', error);
+                        alert('Failed to load material information.');
+                    });
+            }
+
+            // ===== Обработчики событий для кастомного выпадающего списка =====
+            selectContainer.addEventListener('click', function(e) {
+                this.classList.toggle('active');
+            });
+
+            // Закрываем выпадающий список при клике вне контейнера
+            document.addEventListener('click', function(e) {
+                if (!selectContainer.contains(e.target)) {
+                    selectContainer.classList.remove('active');
+                }
+            });
+
+            // Заполняем выпадающий список при загрузке страницы
+            console.log("Calling populateMaterialSelect from DOMContentLoaded");
+            populateMaterialSelect();
+        });
+    </script>
+</body>
+</html>

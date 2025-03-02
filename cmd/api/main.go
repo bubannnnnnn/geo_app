@@ -19,13 +19,13 @@ import (
 )
 
 func main() {
-	// Load configuration from .env file
+	// Загрузка данных из .env
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	// Database configuration
+	// Конфигурация бд
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Europe/Moscow",
 		cfg.DBHost,
@@ -40,10 +40,10 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// AutoMigrate database schema
-	db.AutoMigrate(&models.Well{}, &models.User{}, &models.Sample{}) // Migrate Sample model
+	// Миграция бд
+	db.AutoMigrate(&models.Well{}, &models.User{}, &models.Sample{}, &models.Material{})
 
-	// Initialize repositories, services, and handlers
+	// Утановка repositories, services, и handlers
 	wellRepository := repositories.NewWellRepository(db)
 	wellService := services.NewWellService(wellRepository)
 	wellHandler := handlers.NewWellHandler(wellService)
@@ -55,27 +55,45 @@ func main() {
 	sampleService := services.NewSampleService(sampleRepository)
 	sampleHandler := handlers.NewSampleHandler(sampleService)
 
-	// Gin setup
+	materialRepository := repositories.NewMaterialRepository(db)
+	materialService := services.NewMaterialService(materialRepository)
+	materialHandler := handlers.NewMaterialHandler(materialService)
+
+	// Gin установка
 	router := gin.Default()
 
-	// Custom validation function
+	// Функция кастомного фалидатора
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// Валидатор
 		v.RegisterValidation("latitude", func(fl validator.FieldLevel) bool {
 			latitude := fl.Field().Float()
 			return latitude >= -90 && latitude <= 90
 		})
+
+		// Longitude validation
 		v.RegisterValidation("longitude", func(fl validator.FieldLevel) bool {
 			longitude := fl.Field().Float()
 			return longitude >= -180 && longitude <= 180
 		})
+
+		// Positive number validation
+		v.RegisterValidation("positive", func(fl validator.FieldLevel) bool {
+			value := fl.Field().Float()
+			return value >= 0
+		})
 	}
 
-	// Serve static files from the "web" directory
+	// Обслуживать статические файлы из каталога "web
 	router.Static("/web", "./web")
 
-	// Serve the index.html file at the root
+	// Обработать файл index.html в корневом каталоге
 	router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/web/index.html")
+	})
+
+	// Добавление маршрута для material_page.html
+	router.GET("/material", func(c *gin.Context) {
+		c.File("./web/material.html")
 	})
 
 	// Authentication routes
@@ -96,7 +114,14 @@ func main() {
 	router.DELETE("/api/samples/:id", sampleHandler.DeleteSample)
 	router.GET("/api/samples/well/:well_id", sampleHandler.GetSamplesByWellID)
 
-	// Start the server
+	// Material routes
+	router.GET("/api/materials", materialHandler.GetAllMaterials)
+	router.GET("/api/materials/:id", materialHandler.GetMaterialByID)
+	router.POST("/api/materials", materialHandler.CreateMaterial)
+	router.PUT("/api/materials/:id", materialHandler.UpdateMaterial)
+	router.DELETE("/api/materials/:id", materialHandler.DeleteMaterial)
+
+	// Старт сервер
 	port := cfg.ServerPort
 	log.Printf("Server listening on port %s", port)
 	router.Run(fmt.Sprintf(":%s", port))
